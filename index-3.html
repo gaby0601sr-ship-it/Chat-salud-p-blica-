@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chatbot Educativo - Enfermedades Infecciosas</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f4f8;
+    margin: 0;
+    padding: 20px;
+    color: #1a1a1a;
+  }
+
+  .contenedor {
+    max-width: 700px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    overflow: hidden;
+  }
+
+  .encabezado {
+    background: #1d4ed8;
+    color: white;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .encabezado h1 {
+    margin: 0;
+    font-size: 22px;
+  }
+
+  .encabezado p {
+    margin: 5px 0 0;
+    font-size: 14px;
+    opacity: 0.9;
+  }
+
+  .cuerpo {
+    padding: 20px;
+  }
+
+  /* ---- Selector de enfermedades ---- */
+  #pantalla-inicio h2 {
+    font-size: 16px;
+    color: #444;
+  }
+
+  .lista-enfermedades {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .boton-enfermedad {
+    background: #eef2ff;
+    border: 2px solid #1d4ed8;
+    color: #1d4ed8;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: left;
+    transition: 0.2s;
+  }
+
+  .boton-enfermedad:hover {
+    background: #1d4ed8;
+    color: white;
+  }
+
+  /* ---- Pantalla de preguntas ---- */
+  #pantalla-preguntas {
+    display: none;
+  }
+
+  .barra-superior {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  #nombre-enfermedad-actual {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1d4ed8;
+  }
+
+  .boton-volver {
+    background: #e5e7eb;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .grid-preguntas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 500px) {
+    .grid-preguntas {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .boton-pregunta {
+    background: #f9fafb;
+    border: 1px solid #d1d5db;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    text-align: left;
+  }
+
+  .boton-pregunta:hover {
+    background: #dbeafe;
+    border-color: #1d4ed8;
+  }
+
+  .caja-respuesta {
+    background: #f9fafb;
+    border-left: 4px solid #1d4ed8;
+    padding: 15px;
+    border-radius: 8px;
+    min-height: 60px;
+    font-size: 15px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  .caja-respuesta .titulo-respuesta {
+    font-weight: bold;
+    color: #1d4ed8;
+    display: block;
+    margin-bottom: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="contenedor">
+
+  <div class="encabezado">
+    <h1>🦠 Chatbot Educativo</h1>
+    <p>Enfermedades Infecciosas</p>
+  </div>
+
+  <div class="cuerpo">
+
+    <!-- PANTALLA 1: elegir enfermedad -->
+    <div id="pantalla-inicio">
+      <h2>Selecciona una enfermedad:</h2>
+      <div class="lista-enfermedades" id="lista-enfermedades"></div>
+    </div>
+
+    <!-- PANTALLA 2: preguntas y respuesta -->
+    <div id="pantalla-preguntas">
+      <div class="barra-superior">
+        <span id="nombre-enfermedad-actual"></span>
+        <button class="boton-volver" onclick="volverInicio()">⬅ Volver</button>
+      </div>
+
+      <div class="grid-preguntas" id="grid-preguntas"></div>
+
+      <div class="caja-respuesta" id="caja-respuesta">
+        <span class="titulo-respuesta">Respuesta:</span>
+        <span id="texto-respuesta">Selecciona una pregunta arriba.</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   BASE DE DATOS DE ENFERMEDADES
+   -------------------------------------------------------------------------
+   Aquí es donde TÚ vas a escribir la información científica.
+   Cada enfermedad es un "objeto" entre llaves { }.
+   Para agregar una enfermedad nueva, copia un bloque completo (desde
+   { hasta }, ) y pégalo debajo, luego cambia los datos.
+   ========================================================================= */
+
+const enfermedades = [
+  {
+    nombre: "Sífilis",
+    agenteEtiologico: "Treponema pallidum, una bacteria espiroqueta que no puede cultivarse en medios artificiales. Ingresa por piel o mucosas, llega a los ganglios linfáticos en pocas horas y se disemina por todo el cuerpo. Se transmite por contacto sexual y de madre a hijo (sífilis congénita).",
+    diagnostico: "Se combinan pruebas serológicas treponémicas (por ejemplo FTA-ABS o TPPA) con pruebas no treponémicas (VDRL o RPR); se recomienda usarlas juntas porque, usadas por separado, aumentan los falsos positivos. En la fase primaria también puede identificarse la espiroqueta por microscopía de campo oscuro o PCR de la muestra del chancro. El seguimiento de la respuesta al tratamiento se hace con la misma prueba no treponémica.",
+    tratamiento: "La penicilina sigue siendo el fármaco de elección para todas las etapas de la sífilis. En personas alérgicas a la penicilina se usa doxiciclina, excepto en embarazadas alérgicas, en quienes se prefiere la desensibilización para poder usar penicilina.",
+    principioActivo: "Penicilina G benzatínica (alternativa en alérgicos: doxiciclina).",
+    posologia: "Sífilis primaria, secundaria o latente temprana (menos de 1 año de evolución): 2.4 millones de UI de penicilina G benzatínica, intramuscular, en dosis única. Sífilis latente tardía, de duración incierta o terciaria: 2.4 millones de UI IM una vez por semana durante 3 semanas. Alérgicos: doxiciclina 100 mg vía oral cada 12 horas por 14 a 28 días según el estadio.",
+    mecanismoAccion: "La penicilina se une a las proteínas fijadoras de penicilina (PBP) de la bacteria e inhibe la transpeptidación, el paso final del ensamblaje de la pared celular bacteriana, lo que provoca la lisis y muerte del treponema.",
+    estructuraProceso: "Actúa sobre la pared celular bacteriana (el peptidoglicano), concretamente sobre las enzimas transpeptidasas encargadas de darle rigidez a esa pared.",
+    prevencion: "Uso correcto del preservativo, diagnóstico y tratamiento oportuno de las parejas sexuales, y tamizaje serológico durante el embarazo para prevenir la sífilis congénita.",
+    saludPublica: "La incidencia de sífilis ha aumentado de forma sostenida en la última década en muchos países. Es relevante en salud pública porque facilita la transmisión del VIH, puede causar daño neurológico y cardiovascular grave si no se trata, y puede transmitirse al feto durante el embarazo.",
+    fuentes: "Manual Merck, versión para profesionales (sección Sífilis) · CDC, Sexually Transmitted Diseases Treatment Guidelines · Actas Dermo-Sifiliográficas, actualización en el manejo de la sífilis. El docente y el estudiante deben verificar y complementar con la guía nacional vigente."
+  },
+  {
+    nombre: "Gonorrea",
+    agenteEtiologico: "Neisseria gonorrhoeae, un diplococo gramnegativo intracelular que infecta principalmente los epitelios de la uretra, el cuello uterino, el recto, la faringe y la conjuntiva.",
+    diagnostico: "Examen microscópico con tinción de Gram (útil sobre todo en hombres sintomáticos), cultivo, y pruebas de amplificación de ácidos nucleicos (NAAT), que hoy son el método de referencia por su alta sensibilidad.",
+    tratamiento: "Antibiótico con cefalosporina de tercera generación; con frecuencia se trata también la clamidia de forma empírica por la alta tasa de coinfección.",
+    principioActivo: "Ceftriaxona (algunos esquemas la combinan con azitromicina, según la guía y la resistencia local).",
+    posologia: "Ceftriaxona 500 mg por vía intramuscular en dosis única para la infección no complicada (dosis recomendada en las actualizaciones más recientes de los CDC); en personas con un peso igual o mayor a 150 kg se recomienda 1 g.",
+    mecanismoAccion: "Las cefalosporinas se unen a la proteína fijadora de penicilina PBP2 del gonococo e inhiben la síntesis de la pared celular bacteriana.",
+    estructuraProceso: "Actúa sobre la síntesis de la pared celular bacteriana (peptidoglicano), específicamente sobre la proteína PBP2.",
+    prevencion: "Uso del preservativo, tratamiento de los contactos sexuales, y tamizaje en poblaciones de mayor riesgo.",
+    saludPublica: "Preocupa el aumento de la resistencia a la ceftriaxona y a la azitromicina, documentado por la OMS y los CDC, lo que reduce las opciones terapéuticas disponibles y exige vigilancia epidemiológica constante.",
+    fuentes: "CDC, actualización de las pautas de tratamiento de la infección gonocócica · Manual Merck, versión para profesionales (sección Gonorrea) · OMS. El docente y el estudiante deben verificar y complementar con la guía nacional vigente."
+  },
+  {
+    nombre: "Herpes (orolabial, VHS-1)",
+    agenteEtiologico: "Virus del Herpes Simple tipo 1 (VHS-1), un virus ADN de la familia Herpesviridae que suele causar herpes orolabial, aunque también puede causar herpes genital.",
+    diagnostico: "Habitualmente es un diagnóstico clínico, por el aspecto típico de las vesículas agrupadas sobre una base eritematosa. En casos dudosos o graves se confirma con PCR de la lesión.",
+    tratamiento: "Antivirales tópicos u orales en el episodio agudo, iniciados lo antes posible; en personas con brotes frecuentes se usa terapia supresora continua. Ningún tratamiento actual erradica el virus latente en los ganglios nerviosos.",
+    principioActivo: "Aciclovir (también valaciclovir, famciclovir o penciclovir tópico).",
+    posologia: "Herpes labial, episodio agudo: aciclovir 200 mg vía oral cada 4 horas, 5 veces al día (omitiendo la dosis nocturna), por 5 días. Terapia supresora en inmunocompetentes: 200 mg cada 6 horas u 400 mg cada 12 horas.",
+    mecanismoAccion: "El aciclovir es un análogo sintético de un nucleósido purínico. La timidina quinasa viral (presente solo en células infectadas) lo fosforila a aciclovir monofosfato; luego enzimas celulares completan la fosforilación a trifosfato, forma activa que inhibe la ADN polimerasa viral y termina la cadena de ADN. Por depender de una enzima viral, su acción es muy selectiva y de baja toxicidad para las células no infectadas.",
+    estructuraProceso: "Actúa sobre la síntesis del ADN viral, inhibiendo la ADN polimerasa del virus del herpes.",
+    prevencion: "Evitar el contacto directo con lesiones activas, buena higiene de manos y no compartir utensilios o productos de higiene labial.",
+    saludPublica: "Infección muy prevalente en la población mundial; aunque suele ser benigna, es relevante por sus recurrencias, la posibilidad de contagio incluso sin lesiones visibles, y el riesgo de formas graves en recién nacidos e inmunodeprimidos.",
+    fuentes: "Manual Merck, versión para el público general (Infecciones por VHS) · Guía-ABE, infecciones por virus del herpes simple 1 y 2 · Ficha técnica de aciclovir, CIMA-AEMPS. El docente y el estudiante deben verificar y complementar con la guía nacional vigente."
+  },
+  {
+    nombre: "Herpes genital (VHS-2)",
+    agenteEtiologico: "Principalmente el Virus del Herpes Simple tipo 2 (VHS-2), aunque el VHS-1 también puede causar herpes genital. Ambos son virus ADN de la familia Herpesviridae y se transmiten por contacto sexual.",
+    diagnostico: "Diagnóstico clínico por las lesiones vesiculares o ulcerosas genitales; la PCR de la lesión es el método de referencia. La serología tipo-específica se usa cuando no hay lesiones activas.",
+    tratamiento: "Antivirales orales en el episodio inicial y en las recurrencias; terapia supresora diaria en personas con brotes frecuentes o para reducir el riesgo de transmisión a la pareja.",
+    principioActivo: "Aciclovir, valaciclovir o famciclovir.",
+    posologia: "Episodio inicial: aciclovir 400 mg vía oral cada 8 horas por 7 a 10 días. Terapia supresora: aciclovir 400 mg vía oral cada 12 horas.",
+    mecanismoAccion: "Igual que en el VHS-1: el aciclovir es activado selectivamente por la timidina quinasa viral y su forma trifosfato inhibe la ADN polimerasa viral, deteniendo la replicación del virus.",
+    estructuraProceso: "Actúa sobre la ADN polimerasa viral, es decir, sobre el proceso de replicación del ADN del virus del herpes.",
+    prevencion: "Uso del preservativo (ofrece protección parcial), terapia supresora en la pareja infectada, evitar relaciones sexuales durante los brotes, y valorar cesárea si hay lesiones activas al momento del parto.",
+    saludPublica: "Es una de las infecciones de transmisión sexual virales más frecuentes en el mundo. Es importante porque aumenta el riesgo de adquirir y transmitir el VIH, y porque puede causar herpes neonatal, una infección grave en el recién nacido.",
+    fuentes: "Manual Merck, versión para profesionales · Guía-ABE, infecciones por virus del herpes simple 1 y 2 · CDC, guías de tratamiento de infecciones de transmisión sexual. El docente y el estudiante deben verificar y complementar con la guía nacional vigente."
+  },
+  {
+    nombre: "VPH (virus del papiloma humano)",
+    agenteEtiologico: "Virus del Papiloma Humano (VPH), un virus ADN sin envoltura del que existen más de 100 genotipos; algunos de bajo riesgo (como el 6 y el 11, causantes de verrugas genitales) y otros de alto riesgo oncogénico (como el 16 y el 18, responsables de la mayoría de los cánceres de cuello uterino).",
+    diagnostico: "Prueba de VPH en muestra cervical (detección del ADN viral) y/o citología cervical (Papanicolaou) como tamizaje; inspección visual directa para las verrugas genitales.",
+    tratamiento: "No existe un antiviral específico contra el VPH. Se tratan las manifestaciones: las verrugas genitales con crioterapia, ácido tricloroacético, podofilotoxina o imiquimod; las lesiones precancerosas del cuello uterino con crioterapia o escisión (por ejemplo, LEEP).",
+    principioActivo: "Según la lesión a tratar: podofilotoxina o imiquimod para verrugas genitales (no existe principio activo antiviral específico contra el virus).",
+    posologia: "Depende del producto usado para tratar las lesiones (por ejemplo, imiquimod crema al 5%, aplicado 3 veces por semana). El estudiante debe completar la posología según el esquema y el caso clínico que revise en clase.",
+    mecanismoAccion: "Las proteínas virales E6 y E7 del VPH de alto riesgo inactivan a las proteínas supresoras de tumores p53 y Rb de la célula infectada, lo que favorece la proliferación celular descontrolada y, con el tiempo, la transformación maligna. La vacuna profiláctica, en cambio, usa partículas similares al virus (VLP) hechas con la proteína L1 de la cápside para generar anticuerpos neutralizantes.",
+    estructuraProceso: "El virus actúa sobre las proteínas reguladoras del ciclo celular (p53 y Rb) de las células del epitelio; la vacuna actúa sobre la cápside viral (proteína L1), generando inmunidad antes del contacto con el virus.",
+    prevencion: "Vacunación contra el VPH desde los 9 años de edad, tamizaje cervical periódico (citología o prueba de VPH) y uso del preservativo, que ofrece protección parcial.",
+    saludPublica: "Es la infección de transmisión sexual más frecuente en el mundo. Es responsable de prácticamente todos los cánceres de cuello uterino y de una parte importante de los cánceres de ano, orofaringe y pene. La vacuna contra el VPH fue la primera diseñada para prevenir un cáncer causado por un virus.",
+    fuentes: "OPS, vacuna contra el VPH · National Cancer Institute (NCI), el VPH y el cáncer · MedlinePlus, virus del papiloma humano. El docente y el estudiante deben verificar y complementar con la guía nacional vigente."
+  },
+  {
+    nombre: "Enfermedad de Chagas",
+    agenteEtiologico: "Trypanosoma cruzi, un protozoo flagelado transmitido principalmente por las heces de insectos triatominos (\"chinches\" vectores) al picar; también puede transmitirse por transfusión sanguínea, vía congénita (de madre a hijo) o por alimentos contaminados.",
+    diagnostico: "Fase aguda: examen microscópico directo de sangre, donde suele detectarse el parásito, o PCR. Fase crónica: pruebas serológicas (ELISA, inmunofluorescencia indirecta, hemaglutinación); se recomienda confirmar con dos pruebas de métodos distintos.",
+    tratamiento: "El tratamiento antiparasitario está claramente indicado en la fase aguda, en la infección congénita y en menores de 19 años. En la fase crónica el beneficio es menor y la decisión se evalúa caso por caso.",
+    principioActivo: "Benznidazol (primera línea) o nifurtimox.",
+    posologia: "Benznidazol en adultos: aproximadamente 5 a 7 mg/kg/día por vía oral, dividido en 2 tomas al día, durante 60 días. La dosis exacta y la duración deben verificarse según la edad del paciente y el protocolo nacional vigente.",
+    mecanismoAccion: "El benznidazol es activado por nitrorreductasas del propio parásito, generando metabolitos reactivos que dañan su ADN e inhiben la síntesis de sus macromoléculas. El nifurtimox genera radicales libres que producen estrés oxidativo dentro del parásito.",
+    estructuraProceso: "Actúa sobre el ADN y las macromoléculas del Trypanosoma cruzi, y sobre su equilibrio oxidativo interno.",
+    prevencion: "Control del vector (fumigación, mejora de la vivienda rural), tamizaje en bancos de sangre y en embarazadas, y cocción adecuada de los alimentos en zonas endémicas.",
+    saludPublica: "Es una enfermedad tropical desatendida, endémica en América Latina, con millones de personas infectadas. Genera un alto costo en salud por sus complicaciones cardíacas (miocardiopatía chagásica) y digestivas a largo plazo.",
+    fuentes: "Revista Panamericana de Salud Pública (OPS) · SciELO Chile, guías clínicas de la enfermedad de Chagas · PMC/NCBI. El docente y el estudiante deben verificar y complementar con la guía nacional vigente."
+  },
+  {
+    nombre: "Hepatitis B",
+    agenteEtiologico: "Virus de la Hepatitis B (VHB), un virus ADN de la familia Hepadnaviridae con especial afinidad por las células del hígado (hepatotropo). Se transmite por vía sexual, sanguínea (agujas, transfusiones) y de madre a hijo durante el parto.",
+    diagnostico: "Marcadores serológicos: HBsAg (indica infección activa), anti-HBc, anti-HBs (indica inmunidad); medición de la carga viral (ADN del VHB) para valorar la replicación; pruebas de función hepática (transaminasas).",
+    tratamiento: "En la hepatitis B crónica que cumple criterios de tratamiento (replicación viral activa, transaminasas elevadas de forma persistente, evidencia de daño hepático) se usan antivirales orales de alta barrera genética a la resistencia.",
+    principioActivo: "Tenofovir o entecavir (análogos de nucleós(t)idos).",
+    posologia: "Tenofovir disoproxilo fumarato: 245 mg (1 comprimido) por vía oral, una vez al día, acompañado de alimentos. No se conoce con precisión la duración óptima del tratamiento; suele prolongarse por años.",
+    mecanismoAccion: "El tenofovir compite con el sustrato natural (un desoxirribonucleótido) por el sitio de unión de la polimerasa del VHB y se incorpora a la cadena de ADN viral en formación, provocando la terminación de esa cadena.",
+    estructuraProceso: "Actúa sobre la polimerasa/transcriptasa inversa del VHB, es decir, sobre el proceso de síntesis del ADN viral.",
+    prevencion: "Vacunación (esquema que inicia desde el nacimiento), uso del preservativo, no compartir agujas u objetos cortopunzantes, y tamizaje en embarazadas y donantes de sangre.",
+    saludPublica: "Se estiman cientos de millones de personas con infección crónica por VHB en el mundo, con cientos de miles de muertes anuales por cirrosis y cáncer de hígado (hepatocarcinoma) asociados. La vacunación universal es la estrategia de prevención más costo-efectiva.",
+    fuentes: "Infectio, revista de la Asociación Colombiana de Infectología (Elsevier) · Servicio Andaluz de Salud, informe de tenofovir en hepatitis B · ASSCAT. El docente y el estudiante deben verificar y complementar con la guía nacional vigente."
+  },
+  {
+    nombre: "Malaria (paludismo)",
+    agenteEtiologico: "Parásitos del género Plasmodium (P. falciparum, P. vivax, P. ovale, P. malariae y P. knowlesi), transmitidos por la picadura de la hembra del mosquito Anopheles.",
+    diagnostico: "Examen microscópico de gota gruesa y extendido de sangre con tinción de Giemsa, que sigue siendo el estándar de referencia; pruebas de diagnóstico rápido (detección de antígenos) cuando no se dispone de microscopía de calidad.",
+    tratamiento: "Terapia combinada basada en artemisinina (TCA) para P. falciparum no complicado; para P. vivax en zonas sin resistencia conocida se usa cloroquina, asociada a primaquina para eliminar las formas hepáticas latentes del parásito.",
+    principioActivo: "Derivados de la artemisinina (por ejemplo artesunato), combinados con otro antimalárico (lumefantrina, mefloquina, amodiaquina o piperaquina, según el esquema).",
+    posologia: "Ejemplo con cloroquina para P. vivax: 600 mg base los días 1 y 2, más 300 mg el día 3. Los esquemas de terapia combinada con artemisinina varían según el producto y deben verificarse en la guía nacional o de la OMS vigente.",
+    mecanismoAccion: "La artemisinina y sus derivados generan radicales libres al reaccionar con el hierro liberado durante la digestión de la hemoglobina por el parásito, dañando sus proteínas y membranas. La cloroquina se concentra en la vacuola digestiva del parásito e impide que el grupo hemo (tóxico) se convierta en hemozoína inofensiva.",
+    estructuraProceso: "Actúa sobre el metabolismo de la hemoglobina y la vacuola digestiva del parásito dentro del glóbulo rojo infectado.",
+    prevencion: "Control vectorial (mosquiteros tratados con insecticida, fumigación residual intradomiciliaria), quimioprofilaxis en viajeros a zonas endémicas, y diagnóstico y tratamiento oportunos para reducir la transmisión.",
+    saludPublica: "Enfermedad de alta carga en regiones tropicales, con la mayor mortalidad concentrada en niños menores de 5 años en África subsahariana. La resistencia emergente a la artemisinina es vigilada de cerca por la OMS por su impacto potencial en el control global de la enfermedad.",
+    fuentes: "OMS, Programa Mundial sobre Malaria · Ministerio de Salud de Colombia, guía de práctica clínica de malaria · OPS. El docente y el estudiante deben verificar y complementar con la guía nacional vigente."
+  },
+  {
+    nombre: "ACV (accidente cerebrovascular isquémico)",
+    agenteEtiologico: "IMPORTANTE: el ACV no es una enfermedad infecciosa, por lo que no tiene un agente causal microbiano. Se produce por la oclusión (tipo isquémico) o la ruptura (tipo hemorrágico) de un vaso sanguíneo cerebral. Los principales factores de riesgo son la hipertensión arterial, la fibrilación auricular, la diabetes, la dislipidemia y el tabaquismo.",
+    diagnostico: "Evaluación clínica con escalas neurológicas (como la NIHSS) y neuroimagen urgente (tomografía computarizada o resonancia magnética cerebral) para diferenciar el tipo isquémico del hemorrágico y descartar contraindicaciones antes de un posible tratamiento trombolítico.",
+    tratamiento: "En el ACV isquémico agudo, dentro de la ventana de tiempo adecuada: trombólisis intravenosa y/o trombectomía mecánica. En el ACV hemorrágico el manejo se centra en el control estricto de la presión arterial y, en algunos casos, cirugía.",
+    principioActivo: "Alteplasa (activador tisular del plasminógeno recombinante, rt-PA).",
+    posologia: "Alteplasa intravenosa: 0.9 mg/kg de peso (dosis máxima 90 mg); el 10% se administra en bolo durante 1 minuto y el resto en infusión continua durante 60 minutos, dentro de las primeras 3 a 4.5 horas desde el inicio de los síntomas.",
+    mecanismoAccion: "La alteplasa es un activador tisular del plasminógeno que convierte el plasminógeno unido a la fibrina del coágulo en plasmina; la plasmina degrada la fibrina y disuelve el trombo que obstruye la arteria cerebral.",
+    estructuraProceso: "Actúa sobre el coágulo de fibrina que ocluye la arteria cerebral, es decir, sobre el sistema fibrinolítico.",
+    prevencion: "Control estricto de la presión arterial, manejo anticoagulante de la fibrilación auricular cuando está indicado, control de la diabetes y el colesterol, cese del tabaquismo y actividad física regular.",
+    saludPublica: "Es una de las principales causas de discapacidad y de muerte en el mundo. El pronóstico funcional depende en gran medida de la rapidez del diagnóstico y del tratamiento (\"tiempo es cerebro\").",
+    fuentes: "Manual Merck, versión para profesionales (Accidente cerebrovascular isquémico) · American Stroke Association · Ficha técnica de Actilyse (alteplasa), AEMPS. El docente y el estudiante deben verificar y complementar con la guía nacional vigente."
+  },
+  {
+    nombre: "IAM (infarto agudo de miocardio)",
+    agenteEtiologico: "IMPORTANTE: el IAM no es una enfermedad infecciosa, por lo que no tiene un agente causal microbiano. Se produce habitualmente por la rotura o erosión de una placa de ateroma en una arteria coronaria, lo que forma un trombo que ocluye el flujo sanguíneo al músculo cardíaco. Factores de riesgo principales: tabaquismo, hipertensión arterial, dislipidemia, diabetes y antecedentes familiares.",
+    diagnostico: "Electrocardiograma (elevación del segmento ST u otros cambios característicos), biomarcadores cardíacos (troponina) y evaluación del cuadro clínico de dolor torácico característico.",
+    tratamiento: "Reperfusión urgente mediante intervención coronaria percutánea (angioplastia) o, si no hay acceso a ella a tiempo, fibrinólisis; junto con tratamiento antiagregante, anticoagulante y otros fármacos de soporte (betabloqueantes, IECA, estatinas).",
+    principioActivo: "Ácido acetilsalicílico (aspirina) como antiagregante base, junto con un inhibidor del receptor plaquetario P2Y12 (clopidogrel, prasugrel o ticagrelor).",
+    posologia: "Aspirina: dosis de carga de 162 a 325 mg vía oral (masticada, sin cubierta entérica) al momento del diagnóstico, seguida de una dosis de mantenimiento de 81 a 100 mg al día de forma indefinida.",
+    mecanismoAccion: "La aspirina inhibe de forma irreversible la enzima ciclooxigenasa-1 (COX-1) de las plaquetas mediante acetilación, bloqueando la síntesis de tromboxano A2 y, con ello, la agregación plaquetaria.",
+    estructuraProceso: "Actúa sobre la enzima ciclooxigenasa-1 (COX-1) de las plaquetas, es decir, sobre la vía de agregación plaquetaria.",
+    prevencion: "Control de los factores de riesgo cardiovascular (tabaquismo, hipertensión, dislipidemia, diabetes), dieta saludable, actividad física regular y, en prevención secundaria, uso de estatinas y antiagregantes según indicación médica.",
+    saludPublica: "Es una de las principales causas de muerte en el mundo. La rapidez del diagnóstico y de la reperfusión (\"tiempo es músculo\") determina en gran medida la sobrevida del paciente y la función cardíaca que conserva después del evento.",
+    fuentes: "Manual MSD, versión para profesionales (Infarto agudo de miocardio) · Revista Española de Cardiología · Asociación Española de Enfermería en Cardiología (AEEC). El docente y el estudiante deben verificar y complementar con la guía nacional vigente."
+  }
+
+  // Para agregar una enfermedad 11, pega aquí una coma después del bloque
+  // de arriba y luego pega un nuevo bloque { ... } como los de ejemplo.
+
+];
+
+/* =========================================================================
+   PREGUNTAS (no necesitas tocar esto)
+   ========================================================================= */
+const preguntas = [
+  { texto: "¿Cuál es el agente etiológico?", campo: "agenteEtiologico" },
+  { texto: "¿Cómo se diagnostica?", campo: "diagnostico" },
+  { texto: "¿Cuál es el tratamiento?", campo: "tratamiento" },
+  { texto: "¿Cuál es el principio activo?", campo: "principioActivo" },
+  { texto: "¿Cuál es la posología?", campo: "posologia" },
+  { texto: "¿Cuál es el mecanismo de acción?", campo: "mecanismoAccion" },
+  { texto: "¿Sobre qué actúa el medicamento?", campo: "estructuraProceso" },
+  { texto: "¿Cómo se previene?", campo: "prevencion" },
+  { texto: "¿Cuál es su importancia en salud pública?", campo: "saludPublica" },
+  { texto: "Ver fuentes", campo: "fuentes" }
+];
+
+/* =========================================================================
+   LÓGICA DEL CHATBOT (no necesitas tocar esto)
+   ========================================================================= */
+
+let enfermedadSeleccionada = null;
+
+function iniciar() {
+  const lista = document.getElementById("lista-enfermedades");
+  lista.innerHTML = "";
+  enfermedades.forEach((enf, indice) => {
+    const boton = document.createElement("button");
+    boton.className = "boton-enfermedad";
+    boton.textContent = enf.nombre;
+    boton.onclick = () => mostrarPreguntas(indice);
+    lista.appendChild(boton);
+  });
+}
+
+function mostrarPreguntas(indice) {
+  enfermedadSeleccionada = enfermedades[indice];
+
+  document.getElementById("pantalla-inicio").style.display = "none";
+  document.getElementById("pantalla-preguntas").style.display = "block";
+  document.getElementById("nombre-enfermedad-actual").textContent = enfermedadSeleccionada.nombre;
+
+  const grid = document.getElementById("grid-preguntas");
+  grid.innerHTML = "";
+  preguntas.forEach(p => {
+    const boton = document.createElement("button");
+    boton.className = "boton-pregunta";
+    boton.textContent = p.texto;
+    boton.onclick = () => mostrarRespuesta(p);
+    grid.appendChild(boton);
+  });
+
+  document.getElementById("texto-respuesta").textContent = "Selecciona una pregunta arriba.";
+}
+
+function mostrarRespuesta(pregunta) {
+  const respuesta = enfermedadSeleccionada[pregunta.campo];
+  document.getElementById("texto-respuesta").textContent = respuesta;
+}
+
+function volverInicio() {
+  document.getElementById("pantalla-preguntas").style.display = "none";
+  document.getElementById("pantalla-inicio").style.display = "block";
+}
+
+// Arrancar el chatbot al cargar la página
+iniciar();
+</script>
+
+</body>
+</html>
